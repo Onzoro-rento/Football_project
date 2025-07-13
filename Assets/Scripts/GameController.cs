@@ -456,17 +456,20 @@ public class GameController : MonoBehaviour
         float startTime = ballLog[0].timestamp;
         float replayTimer = 0f;
         float replayDuration = ballLog.Last().timestamp - startTime;
-        while (replayTimer <= replayDuration)
+        float replayPlayBackDuration = replayDuration / gameSpeed; // リプレイの再生時間
+        while (replayTimer <= replayPlayBackDuration + float.Epsilon)
         {
             replayTimer += Time.unscaledDeltaTime;
-            float tstamp = startTime + replayTimer * gameSpeed;
+            float tstamp = startTime + Mathf.Min(replayTimer * gameSpeed, replayDuration);
             if (smoothReplay)
             {
                 // --- ボール補間 ---
                 if (ballLog.Count > 1)
                 {
                     int i0 = GetIndexForTimestamp(ballLog, tstamp);
-                    int i1 = Mathf.Min(i0 + 1, ballLog.Count - 1);
+                    // 最後の要素の場合、i1 も i0 と同じにする
+                    int i1 = (i0 < ballLog.Count - 1) ? i0 + 1 : i0;
+
                     var a = ballLog[i0];
                     var b = ballLog[i1];
                     float dt = b.timestamp - a.timestamp;
@@ -478,7 +481,9 @@ public class GameController : MonoBehaviour
                 if (shoeLog.Count > 1 && shoeObject != null)
                 {
                     int i0 = GetIndexForTimestamp(shoeLog, tstamp);
-                    int i1 = Mathf.Min(i0 + 1, shoeLog.Count - 1);
+                    // 最後の要素の場合、i1 も i0 と同じにする
+                    int i1 = (i0 < shoeLog.Count - 1) ? i0 + 1 : i0;
+
                     var a = shoeLog[i0];
                     var b = shoeLog[i1];
                     float dt = b.timestamp - a.timestamp;
@@ -504,6 +509,16 @@ public class GameController : MonoBehaviour
                 }
             }
             yield return null;
+        }
+        if (ballLog.Count > 0)
+        {
+            transform.position = ballLog.Last().position;
+            transform.rotation = ballLog.Last().rotation;
+        }
+        if (shoeLog.Count > 0 && shoeObject != null)
+        {
+            shoeObject.transform.position = shoeLog.Last().position;
+            shoeObject.transform.rotation = shoeLog.Last().rotation;
         }
         Debug.Log("リプレイ終了");
         // --- 不透明化に戻す ---
