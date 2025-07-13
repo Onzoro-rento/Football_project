@@ -195,7 +195,7 @@ public class GameController : MonoBehaviour
         {
             Debug.Log($"Lift {liftCount}: 物理挙動！");
             StartCoroutine(HandlePhysicsKick(collision));
-            // ★★★何もしないことで、Unityの物理エンジンによる自然な衝突計算がそのまま適用されます★★★
+            
         }
         else
         {
@@ -404,7 +404,18 @@ public class GameController : MonoBehaviour
         yield return new WaitForSecondsRealtime(1.5f);
         CurrentState = GameState.Replaying;
         Debug.Log("リプレイ再生開始");
-        shoeController.followController = false;
+        if (shoeController != null)
+        {
+            shoeController.followController = false;
+        }
+        // ★★★ 修正点2: 靴のRigidbodyをKinematicにし、速度をゼロにする ★★★
+        // これにより、物理演算による影響も受けず、リプレイデータ通りに動く
+        if (shoeRb != null)
+        {
+            shoeRb.isKinematic = true;
+            shoeRb.velocity = Vector3.zero;
+            shoeRb.angularVelocity = Vector3.zero;
+        }
         //statusText.text = "リプレイ再生中...";
         // --- 透明化設定（Fadeモード） ---
         if (ballRenderer != null)
@@ -511,7 +522,16 @@ public class GameController : MonoBehaviour
         }
         // --- 不透明化終了 ---
         CurrentState = GameState.GameOver;
-        shoeController.followController = true;
+        if (shoeController != null)
+        {
+            shoeController.followController = true;
+        }
+        // ★★★ 修正点4: 靴のRigidbodyを再びKinematicにする ★★★
+        // これにより、通常のプレイモードでコントローラー追従が正しく機能する
+        if (shoeRb != null)
+        {
+            shoeRb.isKinematic = true;
+        }
         //statusText.text = $"ゲームオーバー\n回数: {liftCount}\nAボタンでリセット";
     }
     // 既存の GetIndexForTimestamp() はそのまま使用します
