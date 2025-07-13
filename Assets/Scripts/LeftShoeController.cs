@@ -15,7 +15,7 @@ public class LeftShoeController : MonoBehaviour
 }
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
         // rightShoe の位置に Y 軸方向のオフセットを加える
         transform.position = leftShoe.transform.position + new Vector3(xOffset, yOffset, zOffset);

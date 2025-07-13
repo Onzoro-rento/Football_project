@@ -51,9 +51,12 @@ public class GameController : MonoBehaviour
     [Header("効果音設定")]
     public AudioClip collisionSound;
     public GameObject replayActivatorPrefab;
-
+    [Header("リプレイ設定")]
+    [Tooltip("リプレイ時に補間再生を行うか")]
+    public bool smoothReplay = true;  // ※InspectorでON/OFF可
     // --- Private Variables ---
     private Rigidbody rb;
+    private Rigidbody shoeRb;
     private Renderer ballRenderer;
     private AudioSource audioSource;
     private Coroutine countdownCoroutine;
@@ -67,6 +70,9 @@ public class GameController : MonoBehaviour
 
     // 物理挙動調整用
     private Vector3 originalGravity; // NEW: 元の重力を保存する変数
+    [Header("当たり判定設定")]
+    [SerializeField] private float collisionCooldown = 0.1f; // 衝突後の無敵時間（Inspectorから調整可能）
+    private float lastCollisionTime = -1f; // 最後に衝突した時間
 
     void Start()
     {
@@ -78,6 +84,7 @@ public class GameController : MonoBehaviour
             shoeController = shoeObject.GetComponent<ShoeController>();
             // ▼▼▼【追加】▼▼▼
             // ゲーム開始時に必ずコントローラー追従を有効にする
+            shoeRb = shoeObject.GetComponent<Rigidbody>();
             shoeController.followController = true;
             // ▲▲▲【追加】▲▲▲
         }
@@ -149,6 +156,11 @@ public class GameController : MonoBehaviour
         {
             return;
         }
+        if (Time.time < lastCollisionTime + collisionCooldown)
+        {
+            return; // クールダウン中は処理をしない
+        }
+        lastCollisionTime = Time.time; // 有効な衝突として時間を記録
 
         if (CurrentState == GameState.Ready || CurrentState == GameState.Active)
         {
@@ -182,12 +194,14 @@ public class GameController : MonoBehaviour
         if (liftCount % physicsLiftInterval == 0)
         {
             Debug.Log($"Lift {liftCount}: 物理挙動！");
-            // 何もせず、Unityの物理演算（調整された重力下）に任せる
+            StartCoroutine(HandlePhysicsKick(collision));
+            // ★★★何もしないことで、Unityの物理エンジンによる自然な衝突計算がそのまま適用されます★★★
         }
         else
         {
             Debug.Log($"Lift {liftCount}: アシスト！ 上昇高さ: {assistedLiftHeight}m");
-            // --- CHANGED: アシスト挙動の変更 ---
+
+            // --- ▼▼▼ アシストキックのコードを、elseブロックの中に完全に閉じ込める ▼▼▼ ---
             // 目標の高さに到達するために必要な初速を計算 v = sqrt(2 * g * h)
             float requiredVelocity = Mathf.Sqrt(2f * Mathf.Abs(Physics.gravity.y) * assistedLiftHeight);
 
@@ -197,9 +211,40 @@ public class GameController : MonoBehaviour
 
             // 計算した初速を真上に与える
             rb.velocity = new Vector3(0, requiredVelocity, 0);
-            // --- END CHANGED ---
+            // --- ▲▲▲ アシストキックのコードを、elseブロックの中に完全に閉じ込める ▲▲▲ ---
         }
     }
+    private IEnumerator HandlePhysicsKick(Collision collision)
+{
+    // 衝突時の靴の速度を物理演算に反映させるため、一時的にKinematicを解除
+    if (shoeRb != null)
+    {
+        shoeRb.isKinematic = false;
+    }
+
+    // 1. 時間を1倍速に戻す
+    Time.timeScale = 1.0f;
+
+    // 2. 物理エンジンが衝突を再計算するのを1フレーム待つ
+    yield return new WaitForFixedUpdate();
+
+    // 3. 1倍速で計算されたボールの速度を、0.4倍速の世界の速度に変換して保存
+    Vector3 scaledVelocity = rb.velocity * gameSpeed;
+    Vector3 scaledAngularVelocity = rb.angularVelocity * gameSpeed;
+    
+    // 4. 時間を0.4倍速に戻す
+    Time.timeScale = gameSpeed;
+
+    // 5. 変換した速度をボールに再設定
+    rb.velocity = scaledVelocity;
+    rb.angularVelocity = scaledAngularVelocity;
+
+    // 靴を元の状態に戻す
+    if (shoeRb != null)
+    {
+        shoeRb.isKinematic = true;
+    }
+}
 
     private IEnumerator StartCountdown()
     {
@@ -238,7 +283,7 @@ public class GameController : MonoBehaviour
         Time.timeScale = gameSpeed;
 
         CurrentState = GameState.Ready;
-        rb.isKinematic = true;
+        rb.isKinematic = false;
         rb.useGravity = false;
         liftCount = 0;
 
@@ -355,135 +400,124 @@ public class GameController : MonoBehaviour
 
     private IEnumerator PlayReplay()
     {
-        yield return new WaitForSecondsRealtime(1.5f); // CHANGED
-
+        // リプレイ開始前の待機
+        yield return new WaitForSecondsRealtime(1.5f);
         CurrentState = GameState.Replaying;
         Debug.Log("リプレイ再生開始");
-
-        if (shoeController != null) shoeController.followController = false;
-        if (statusText != null) statusText.text = "リプレイ再生中...";
-
-        // --- 【リプレイ開始：ボールの透明度を上げる】 ---
+        shoeController.followController = false;
+        //statusText.text = "リプレイ再生中...";
+        // --- 透明化設定（Fadeモード） ---
         if (ballRenderer != null)
         {
-            Material ballMaterial = ballRenderer.material;
-
-            // ★ 透明化設定（Standard Shader用）
-            ballMaterial.SetFloat("_Mode", 3); // 3 = Transparent
-            ballMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            ballMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            ballMaterial.SetInt("_ZWrite", 0);
-            ballMaterial.DisableKeyword("_ALPHATEST_ON");
-            ballMaterial.EnableKeyword("_ALPHABLEND_ON");
-            ballMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            ballMaterial.renderQueue = 3000;
-
-            // ★ 透明度変更（例：30%）
-            Color currentColor = ballMaterial.color;
-            currentColor.a = 0.3f;
-            ballMaterial.color = currentColor;
-
-            // Optional: MaterialPropertyBlock でも反映（必須ではない）
-            MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
-            propertyBlock.SetColor("_Color", currentColor);
-            ballRenderer.SetPropertyBlock(propertyBlock);
+            var mat = ballRenderer.material;
+            mat.SetFloat("_Mode", 2);  // 2 = Fade
+            mat.SetFloat("_Mode", 2);  // 2 = Fade
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = 3000;
+            // アルファだけを変更
+            Color c = mat.color;
+            c.a = 0.3f;
+            mat.color = c;
         }
-
-        // --- 【透明度変更 終了】 ---
-
+        // --- 透明化終了 ---
+        // 最初の位置合わせ
         if (ballLog.Count > 0)
         {
-            transform.position = ballLog.First().position; // .First() を使用 (System.Linq を using 必要)
-            transform.rotation = ballLog.First().rotation; // .First() を使用
+            transform.position = ballLog[0].position;
+            transform.rotation = ballLog[0].rotation;
         }
         if (shoeLog.Count > 0 && shoeObject != null)
         {
-            shoeObject.transform.position = shoeLog.First().position; // .First() を使用
-            shoeObject.transform.rotation = shoeLog.First().rotation; // .First() を使用
+            shoeObject.transform.position = shoeLog[0].position;
+            shoeObject.transform.rotation = shoeLog[0].rotation;
         }
-
         if (ballLog.Count == 0)
         {
-            Debug.Log("リプレイデータがありません。");
+            Debug.LogWarning("リプレイデータがありません");
             CurrentState = GameState.GameOver;
             yield break;
         }
-
-        float startTime = ballLog.First().timestamp; // .First() を使用
+        float startTime = ballLog[0].timestamp;
         float replayTimer = 0f;
-        float replayDuration = ballLog.Last().timestamp - startTime; // .Last() を使用
-
+        float replayDuration = ballLog.Last().timestamp - startTime;
         while (replayTimer <= replayDuration)
         {
-            replayTimer += Time.unscaledDeltaTime; // CHANGED: タイムスケールに関係なく再生
-            float currentTimestamp = startTime + (replayTimer * gameSpeed); // 保存された時間軸に合わせる
-
-            int ballIndex = GetIndexForTimestamp(ballLog, currentTimestamp);
-            int shoeIndex = GetIndexForTimestamp(shoeLog, currentTimestamp);
-
-            if (ballIndex != -1)
+            replayTimer += Time.unscaledDeltaTime;
+            float tstamp = startTime + replayTimer * gameSpeed;
+            if (smoothReplay)
             {
-                transform.position = ballLog.ElementAt(ballIndex).position; // .ElementAt() を使用
-                transform.rotation = ballLog.ElementAt(ballIndex).rotation; // .ElementAt() を使用
+                // --- ボール補間 ---
+                if (ballLog.Count > 1)
+                {
+                    int i0 = GetIndexForTimestamp(ballLog, tstamp);
+                    int i1 = Mathf.Min(i0 + 1, ballLog.Count - 1);
+                    var a = ballLog[i0];
+                    var b = ballLog[i1];
+                    float dt = b.timestamp - a.timestamp;
+                    float t = dt > Mathf.Epsilon ? (tstamp - a.timestamp) / dt : 0f;
+                    transform.position = Vector3.Lerp(a.position, b.position, t);
+                    transform.rotation = Quaternion.Slerp(a.rotation, b.rotation, t);
+                }
+                // --- 靴補間 ---
+                if (shoeLog.Count > 1 && shoeObject != null)
+                {
+                    int i0 = GetIndexForTimestamp(shoeLog, tstamp);
+                    int i1 = Mathf.Min(i0 + 1, shoeLog.Count - 1);
+                    var a = shoeLog[i0];
+                    var b = shoeLog[i1];
+                    float dt = b.timestamp - a.timestamp;
+                    float t = dt > Mathf.Epsilon ? (tstamp - a.timestamp) / dt : 0f;
+                    shoeObject.transform.position = Vector3.Lerp(a.position, b.position, t);
+                    shoeObject.transform.rotation = Quaternion.Slerp(a.rotation, b.rotation, t);
+                }
             }
-            if (shoeIndex != -1 && shoeObject != null)
+            else
             {
-                shoeObject.transform.position = shoeLog.ElementAt(shoeIndex).position; // .ElementAt() を使用
-                shoeObject.transform.rotation = shoeLog.ElementAt(shoeIndex).rotation; // .ElementAt() を使用
+                // 元のインデックス再生（ジャンプ）
+                int bi = GetIndexForTimestamp(ballLog, tstamp);
+                if (bi >= 0)
+                {
+                    transform.position = ballLog[bi].position;
+                    transform.rotation = ballLog[bi].rotation;
+                }
+                int si = GetIndexForTimestamp(shoeLog, tstamp);
+                if (si >= 0 && shoeObject != null)
+                {
+                    shoeObject.transform.position = shoeLog[si].position;
+                    shoeObject.transform.rotation = shoeLog[si].rotation;
+                }
             }
-
             yield return null;
         }
-
         Debug.Log("リプレイ終了");
+        // --- 不透明化に戻す ---
         if (ballRenderer != null)
         {
-            Material ballMaterial = ballRenderer.material;
-
-            // ★ 不透明設定（元に戻す）
-            ballMaterial.SetFloat("_Mode", 0); // 0 = Opaque
-            ballMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            ballMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-            ballMaterial.SetInt("_ZWrite", 1);
-            ballMaterial.DisableKeyword("_ALPHATEST_ON");
-            ballMaterial.DisableKeyword("_ALPHABLEND_ON");
-            ballMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            ballMaterial.renderQueue = -1;
-
-            // ★ 透明度を100%に戻す
-            Color currentColor = ballMaterial.color;
-            currentColor.a = 1f;
-            ballMaterial.color = currentColor;
-
-            // MaterialPropertyBlock を使うなら再適用
-            MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
-            propertyBlock.SetColor("_Color", currentColor);
-            ballRenderer.SetPropertyBlock(propertyBlock);
+            var mat = ballRenderer.material;
+            mat.SetFloat("_Mode", 0);  // Opaque
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+            mat.SetInt("_ZWrite", 1);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.DisableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = -1;
+            Color c = mat.color; c.a = 1f; mat.color = c;
         }
-
+        // --- 不透明化終了 ---
         CurrentState = GameState.GameOver;
-        if (shoeController != null) shoeController.followController = true;
-
-        // --- 【リプレイ終了：ボールの透明度を元に戻す】 ---
-        if (ballRenderer != null)
-        {
-            Material ballMaterial = ballRenderer.material;
-            Color currentColor = ballMaterial.color;
-            currentColor.a = 1f; // 透明度を元に戻す
-                                 // MaterialPropertyBlock を再度適用して変更を反映
-            MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
-            propertyBlock.SetColor("_Color", currentColor);
-            ballRenderer.SetPropertyBlock(propertyBlock);
-        }
-        // --- 【透明度復元 終了】 ---
-
-        if (statusText != null)
-        {
-            statusText.text = $"ゲームオーバー\n回数: {liftCount}\nAボタンでリセット";
-        }
+        shoeController.followController = true;
+        //statusText.text = $"ゲームオーバー\n回数: {liftCount}\nAボタンでリセット";
     }
+    // 既存の GetIndexForTimestamp() はそのまま使用します
 
-    private int GetIndexForTimestamp(List<TransformData> log, float timestamp)
+
+private int GetIndexForTimestamp(List<TransformData> log, float timestamp)
     {
         if (log.Count == 0) return -1;
         for (int i = 0; i < log.Count; i++)
@@ -495,4 +529,5 @@ public class GameController : MonoBehaviour
         }
         return log.Count - 1;
     }
+
 }

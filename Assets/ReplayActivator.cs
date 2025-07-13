@@ -7,6 +7,7 @@ public class ReplayActivator : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // プレイヤーの判定（必要に応じて修正）
+        Debug.Log($"トリガーに接触！相手は: {other.name}, タグは: {other.tag}");
         if (other.CompareTag("Shoe") && gameController != null && GameController.CurrentState == GameController.GameState.GameOver)
         {
             gameController.StartReplay();
