@@ -16,7 +16,7 @@ public class ShoeController : MonoBehaviour
     [Tooltip("コントローラーへの追従を有効にするか")]
     public bool followController = true;
 
-    void LateUpdate()
+    void LateUpdate()   
     {
         // followControllerがtrueの場合のみ、コントローラーの位置に追従する
         if (followController && targetControllerAnchor != null)

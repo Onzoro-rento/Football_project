@@ -353,18 +353,53 @@ MonoBehaviour:
     Path: event:/BL1
   soundB:
     Guid:
+      Data1: 516149612
+      Data2: 1209364388
+      Data3: -278183784
+      Data4: -2030447516
+    Path: event:/BR1
+  soundC:
+    Guid:
       Data1: -1207694813
       Data2: 1333271388
       Data3: 1756220094
       Data4: 1253744858
     Path: event:/FL1
-  soundC:
+  soundD:
     Guid:
       Data1: -1712589359
       Data2: 1246678560
       Data3: 1352879806
       Data4: 2125010718
     Path: event:/FR1
+  soundE:
+    Guid:
+      Data1: 925462439
+      Data2: 1075620611
+      Data3: 959023765
+      Data4: 1833148960
+    Path: event:/C1
+  soundF:
+    Guid:
+      Data1: -2136382092
+      Data2: 1172430007
+      Data3: 1284337287
+      Data4: -1468494513
+    Path: event:/LEF!
+  soundG:
+    Guid:
+      Data1: -278274386
+      Data2: 1213407298
+      Data3: -1535707486
+      Data4: 1642935731
+    Path: event:/SL1
+  soundH:
+    Guid:
+      Data1: 1620464028
+      Data2: 1268951591
+      Data3: 606338454
+      Data4: -1827045216
+    Path: event:/SR1
 --- !u!114 &1964441623
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -386,7 +421,7 @@ MonoBehaviour:
       Data4: 0
     Path: 
   Event: 
-  EventPlayTrigger: 0
+  EventPlayTrigger: 1
   EventStopTrigger: 0
   AllowFadeout: 1
   TriggerOnce: 0
@@ -394,8 +429,8 @@ MonoBehaviour:
   NonRigidbodyVelocity: 0
   Params: []
   OverrideAttenuation: 0
-  OverrideMinDistance: -1
-  OverrideMaxDistance: -1
+  OverrideMinDistance: 1
+  OverrideMaxDistance: 20
 --- !u!4 &1964441624
 Transform:
   m_ObjectHideFlags: 0
