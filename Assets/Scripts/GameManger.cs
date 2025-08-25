@@ -1,207 +1,462 @@
-// GameManager.cs
-// –ğŠ„FƒQ[ƒ€‘S‘Ì‚Ì—¬‚êió‘Ô‘JˆÚjAƒ‹[ƒ‹AŠeƒVƒXƒeƒ€ŠÔ‚Ì˜AŒg‚ğŠÇ—‚·‚éi—ß“ƒ
+ï»¿// GameManager.cs
 
 using UnityEngine;
+
 using System.Collections;
 
+using System;
+using UnityEngine.SceneManagement; // â˜… è¿½åŠ : ã‚·ãƒ¼ãƒ³é·ç§»ã«å¿…è¦
+
+
+
 public class GameManager : MonoBehaviour
+
 {
-    // ƒQ[ƒ€‚Ìó‘Ô‚ğ’è‹`
+
     public enum GameState { Initializing, Ready, Countdown, Active, GameOver, Replaying }
+
     public static GameState CurrentState { get; private set; }
 
-    [Header("ƒQ[ƒ€İ’è")]
-    [Tooltip("ƒNƒŠƒA‚Ü‚Å‚É•K—v‚ÈƒŠƒtƒeƒBƒ“ƒO‰ñ”")]
+
+
+    [Header("ã‚²ãƒ¼ãƒ è¨­å®š")]
+
+    [Tooltip("ã‚¯ãƒªã‚¢ã¾ã§ã«å¿…è¦ãªãƒªãƒ•ãƒ†ã‚£ãƒ³ã‚°å›æ•°")]
+
     [SerializeField] private int totalLiftsToClear = 20;
-    [Tooltip("•¨—‹““®‚ª“K—p‚³‚ê‚éŠÔŠui—á: 5‰ñ‚É1‰ñj")]
-    [SerializeField] private int physicsLiftInterval = 5;
-    [Tooltip("ƒQ[ƒ€‘S‘Ì‚Ì‘¬“xi0.4‚Å40%‚Ì‘¬“xj")]
-    [SerializeField] private float gameSpeed = 0.4f;
 
-    [Header("ƒIƒuƒWƒFƒNƒgQÆ")]
-    [SerializeField] private Transform rightControllerAnchor;
-    [SerializeField] private GameObject shoeObject;
 
-    [Header("ƒ{[ƒ‹‰ŠúˆÊ’uƒIƒtƒZƒbƒg")]
-    [SerializeField] private Vector3 positionOffset = new Vector3(0f, 0.50f, 0.30f);
 
-    // --- ƒVƒXƒeƒ€QÆ ---
-    [Header("ƒVƒXƒeƒ€QÆ")]
+    [Tooltip("è½ä¸‹ãƒ•ã‚§ãƒ¼ã‚ºã®ã‚¿ã‚¤ãƒ ã‚¹ã‚±ãƒ¼ãƒ«ï¼ˆä¾‹: 0.5 ã§50%ã®é€Ÿåº¦ï¼‰")]
+
+    [SerializeField] private float fallTimeScale = 0.5f;
+
+
+
+Â  Â  // â˜…å‰Šé™¤: æ‰‹å‹•ç‰©ç†æ¼”ç®—ãŒä¸è¦ã«ãªã£ãŸãŸã‚ã€ä»¥ä¸‹ã®å¤‰æ•°ã‚’å‰Šé™¤
+
+Â  Â  // [SerializeField] private float maxKickHeight = 1.2f;
+
+Â  Â  // [SerializeField] private float riseSpeedFactor = 0.4f;
+
+
+
+Â  Â  [Tooltip("ã‚²ãƒ¼ãƒ é–‹å§‹æ™‚ã®æ‰“ã¡ä¸Šã’ã®é«˜ã•(m)")]
+
+    [SerializeField] private float initialLaunchHeight = 0.8f;
+
+    [SerializeField] private Vector3 ReplayActivatorOffset = new Vector3(0f, 0.1f, 0.5f);
+
+    [Tooltip("ã‚¢ã‚·ã‚¹ãƒˆã‚­ãƒƒã‚¯ã§ãƒœãƒ¼ãƒ«ãŒåˆ°é”ã™ã‚‹é«˜ã•(m)")]
+    [SerializeField] private float assistedKickHeight = 0.8f;
+
+    [Header("ãƒœãƒ¼ãƒ«åˆæœŸä½ç½®")]
+
+    [Tooltip("ãƒœãƒ¼ãƒ«ã®åˆæœŸä½ç½®ï¼ˆãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ï¼‰")]
+
+    [SerializeField] private Vector3 initialBallPosition = new Vector3(0f, 0.7f, 0.3f);
+
+    [Tooltip("ãƒœãƒ¼ãƒ«ã®åˆæœŸå›è»¢")]
+
+    [SerializeField] private Quaternion initialBallRotation = Quaternion.Euler(45, 0, 0);
+    [Header("ãƒ•ã‚£ãƒ¼ãƒ‰ãƒãƒƒã‚¯è‰²è¨­å®š")]
+    [Tooltip("æ¬¡ã®ã‚­ãƒƒã‚¯ãŒã‚¢ã‚·ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã™è‰²")]
+    [SerializeField] public Color assistKickColor = Color.cyan;
+    [Tooltip("æ¬¡ã®ã‚­ãƒƒã‚¯ãŒé€šå¸¸ãƒ¢ãƒ¼ãƒ‰ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã™è‰²")]
+    [SerializeField] public Color normalKickColor = Color.yellow;
+
+
+    [Header("ã‚·ã‚¹ãƒ†ãƒ å‚ç…§")]
+
     [SerializeField] private BallController ballController;
+
     [SerializeField] private UIManager uiManager;
+
     [SerializeField] private ReplaySystem replaySystem;
 
-    // --- “à•”ó‘Ô ---
+    [SerializeField] private ShoeController shoeController;
+
+    private Vector3 initialGravity;
+
+
+
+
+
     private int liftCount = 0;
-    private Rigidbody shoeRb;
+
+
 
     void Start()
+
     {
-        if (shoeObject != null) shoeRb = shoeObject.GetComponent<Rigidbody>();
 
-        // ŠeƒVƒXƒeƒ€‚ªQÆ‚³‚ê‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
-        if (ballController == null || uiManager == null || replaySystem == null)
-        {
-            Debug.LogError("•K—v‚ÈƒVƒXƒeƒ€ƒRƒ“ƒ|[ƒlƒ“ƒg‚ªİ’è‚³‚ê‚Ä‚¢‚Ü‚¹‚ñI");
-            return;
-        }
+        if (ballController == null) { Debug.LogError("BallControllerãŒè¨­å®šã•ã‚Œã¦ã„ã¾ã›ã‚“ï¼"); return; }
 
-        // ƒCƒxƒ“ƒg‚Ìw“Çİ’è
         ballController.OnKicked += HandleKick;
+
         ballController.OnHitGround += HandleGameOver;
 
-        Time.timeScale = gameSpeed;
         CurrentState = GameState.Initializing;
+        fallTimeScale = PlayerPrefs.GetFloat("SpeedMultiplier", 1.0f);
+Â  Â  Â  Â  // â˜…ã‚²ãƒ¼ãƒ é–‹å§‹æ™‚ã«æœ¬æ¥ã®é‡åŠ›ã‚’è¨˜æ†¶
+        Debug.Log($"ã‚²ãƒ¼ãƒ é–‹å§‹æ™‚ã®é‡åŠ›: {Physics.gravity}");
+
+        initialGravity = Physics.gravity;
+
     }
+
+
 
     void OnDestroy()
+
     {
-        // ”O‚Ì‚½‚ßƒCƒxƒ“ƒgw“Ç‚ğ‰ğœ
+
         if (ballController != null)
+
         {
+
             ballController.OnKicked -= HandleKick;
+
             ballController.OnHitGround -= HandleGameOver;
+
         }
-        Time.timeScale = 1.0f;
+
     }
+
+
 
     void Update()
+
     {
-        // ƒQ[ƒ€ŠJnƒgƒŠƒK[
+
         if (CurrentState == GameState.Initializing)
+
         {
-            if (OVRInput.IsControllerConnected(OVRInput.Controller.RTouch) || OVRInput.IsControllerConnected(OVRInput.Controller.LTouch))
+
+            if (Input.anyKeyDown || (OVRInput.IsControllerConnected(OVRInput.Controller.RTouch) || OVRInput.IsControllerConnected(OVRInput.Controller.LTouch)))
+
             {
+
                 ResetGame();
+
             }
+
             return;
+
         }
 
-        // ƒŠƒZƒbƒgƒ{ƒ^ƒ“
-        if ((CurrentState == GameState.GameOver || CurrentState == GameState.Active) && OVRInput.GetDown(OVRInput.Button.One))
+
+
+        if ((CurrentState == GameState.GameOver || CurrentState == GameState.Active) && (Input.GetKeyDown(KeyCode.R) || OVRInput.GetDown(OVRInput.Button.One)))
+
         {
+
             ResetGame();
+
         }
+
     }
 
-    private void ResetGame()
+
+
+    public void ResetGame()
+
     {
+
+        Time.timeScale = 1.0f;
+
         StopAllCoroutines();
-        Time.timeScale = gameSpeed;
 
         CurrentState = GameState.Ready;
+
         liftCount = 0;
 
-        ballController.SetKickable(true);
-        ballController.ResetPosition(rightControllerAnchor, positionOffset, Quaternion.Euler(45, 0, 0));
+        Physics.gravity = initialGravity;
+        Debug.Log($"ã‚²ãƒ¼ãƒ é–‹å§‹æ™‚ã®é‡åŠ›: {fallTimeScale}");
 
-        uiManager.HideCountdown();
-        uiManager.HideReplayActivator();
-        uiManager.UpdateStatusText("ƒ{[ƒ‹‚ğR‚Á‚ÄƒXƒ^[ƒg");
 
-        replaySystem.StopLogging();
+        ballController.ResetPosition(initialBallPosition, initialBallRotation);
 
-        Debug.Log("ƒQ[ƒ€‚ğƒŠƒZƒbƒg‚µ‚Ü‚µ‚½B");
+        ballController.SetReadyToKick();
+
+        if (ballController != null)
+        {
+            ballController.SetBaseColor(assistKickColor);
+        }
+
+
+        if (uiManager != null)
+
+        {
+
+            uiManager.HideCountdown();
+
+            // â˜… è¿½åŠ : ãƒªã‚»ãƒƒãƒˆæ™‚ã«å¿…ãšãƒ‘ãƒãƒ«ã‚’éè¡¨ç¤ºã«ã™ã‚‹
+            uiManager.HideGameClearPanel();
+            uiManager.HideGameOverPanel();
+
+            uiManager.UpdateStatusText("ãƒœãƒ¼ãƒ«ã‚’è¹´ã£ã¦ã‚¹ã‚¿ãƒ¼ãƒˆ");
+
+        }
+
+        if (replaySystem != null) replaySystem.StopLogging();
+
+        
+
     }
 
-    // BallController‚ÌOnKickedƒCƒxƒ“ƒg‚É‚æ‚Á‚ÄŒÄ‚Ño‚³‚ê‚é
-    private void HandleKick(Collision collision)
+
+
+Â  Â  // â˜…ä¿®æ­£: ã‚­ãƒƒã‚¯å‡¦ç†ã‚’ã‚²ãƒ¼ãƒ çŠ¶æ…‹ã§åˆ†å²ã•ã›ã‚‹
+
+Â  Â  private void HandleKick(Collision collision)
+
     {
-        // Å‰‚ÌƒLƒbƒN‚ÍƒJƒEƒ“ƒgƒ_ƒEƒ“‚ğŠJn
+
         if (CurrentState == GameState.Ready)
+
         {
-            StartCoroutine(StartCountdown());
-            return;
+
+Â  Â  Â  Â  Â  Â  // åˆå›ã‚­ãƒƒã‚¯ã®å‡¦ç†
+
+Â  Â  Â  Â  Â  Â  CurrentState = GameState.Countdown;
+
+            StartCoroutine(InitialKickSequence());
+
         }
 
-        if (CurrentState != GameState.Active) return;
+        else if (CurrentState == GameState.Active)
 
-        liftCount++;
-        uiManager.UpdateStatusText($"Lifting: {liftCount}");
-
-        if (liftCount >= totalLiftsToClear)
         {
-            HandleGameClear();
-            return;
+
+Â  Â  Â  Â  Â  Â  // 2å›ç›®ä»¥é™ã®ãƒªãƒ•ãƒ†ã‚£ãƒ³ã‚°å‡¦ç†
+
+Â  Â  Â  Â  Â  Â  // ç‰©ç†æ¼”ç®—ã«ã¯ä»‹å…¥ã›ãšã€å›æ•°ã‚’æ•°ãˆã‚‹ã ã‘
+
+Â  Â  Â  Â  Â  Â  
+
+            liftCount++;
+            bool isAssistKick = (liftCount % 5 != 0);
+            if (isAssistKick)
+            {
+                // ã‚¢ã‚·ã‚¹ãƒˆã‚­ãƒƒã‚¯: ãƒœãƒ¼ãƒ«ã‚’ä¸€å®šã®é«˜ã•ã¾ã§ä¸Šã’ã‚‹
+                Debug.Log($"Assist Kick! Count: {liftCount}");
+                ballController.LaunchAssisted(assistedKickHeight, fallTimeScale);
+            }
+            else
+            {
+                // é€šå¸¸ã‚­ãƒƒã‚¯: å®Ÿéš›ã®ã‚­ãƒƒã‚¯ã®ç‰©ç†æ¼”ç®—ã‚’åæ˜ 
+                Debug.Log($"Normal Kick! Count: {liftCount}");
+                ballController.LaunchWithManualControl(fallTimeScale);
+            }
+
+
+            int nextLiftCount = liftCount + 1;
+
+            if (nextLiftCount > totalLiftsToClear)
+            {
+                // ã‚²ãƒ¼ãƒ ã‚¯ãƒªã‚¢å¾Œã®ãŸã‚ã€ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®è‰²ã«æˆ»ã™ï¼ˆä»»æ„ï¼‰
+                ballController.SetBaseColor(Color.white);
+            }
+            else
+            {
+                bool isNextKickAssist = (nextLiftCount % 5 != 0);
+                if (isNextKickAssist)
+                {
+                    ballController.SetBaseColor(assistKickColor);
+                }
+                else
+                {
+                    ballController.SetBaseColor(normalKickColor);
+                }
+            }
+
+            if (uiManager != null) uiManager.UpdateStatusText($"Lifting: {liftCount}");
+
+
+
+            if (liftCount >= totalLiftsToClear)
+
+            {
+
+                HandleGameClear();
+
+            }
+
         }
 
-        // ƒAƒVƒXƒg‚©•¨—ƒLƒbƒN‚©‚ğ”»’è
-        if (liftCount % physicsLiftInterval == 0)
-        {
-            StartCoroutine(ballController.PerformPhysicsKick(shoeRb, gameSpeed));
-        }
-        else
-        {
-            ballController.PerformAssistKick();
-        }
     }
 
-    private IEnumerator StartCountdown()
+
+
+    private IEnumerator InitialKickSequence()
+
     {
-        CurrentState = GameState.Countdown;
+
+Â  Â  Â  Â  // ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ä¸­ã¯ãƒœãƒ¼ãƒ«ã‚’ç‰©ç†çš„ã«å›ºå®š
+
+Â  Â  Â  Â  ballController.GetComponent<Rigidbody>().isKinematic = true;
+
+
 
         int count = 3;
+
         while (count > 0)
+
         {
-            uiManager.ShowCountdown(count.ToString());
+
+            if (uiManager != null) uiManager.ShowCountdown(count.ToString());
+
             yield return new WaitForSecondsRealtime(1.0f);
+
             count--;
+
         }
 
-        uiManager.ShowCountdown("GO!");
-        StartGame();
-        yield return new WaitForSecondsRealtime(1.0f);
-        uiManager.HideCountdown();
-    }
+        if (uiManager != null) uiManager.ShowCountdown("GO!");
 
-    void StartGame()
-    {
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        if (uiManager != null) uiManager.HideCountdown();
+
+
+
         CurrentState = GameState.Active;
-        ballController.ActivatePhysics(); // ƒ{[ƒ‹‚Ì•¨—‰‰Z‚ğŠJn
-        replaySystem.StartLogging(gameSpeed); // ƒŠƒvƒŒƒC‚Ì‹L˜^‚ğŠJn
-        uiManager.UpdateStatusText($"Lifting: {liftCount}");
+
+
+
+Â  Â  Â  Â  // â˜…ä¿®æ­£: Unityã®ç‰©ç†æ³•å‰‡ã«åŸºã¥ã„ãŸåˆé€Ÿã‚’è¨ˆç®—
+
+Â  Â  Â  Â  // v = sqrt(2 * g * h)
+
+Â  Â  Â  Â  //Time.timeScale = fallTimeScale;
+
+        //Physics.gravity = initialGravity / fallTimeScale;
+
+        float requiredVelocityY = Mathf.Sqrt(2f * Mathf.Abs(initialGravity.y) * initialLaunchHeight);
+
+        Vector3 initialLaunchVelocity = new Vector3(0, requiredVelocityY, 0);
+
+
+
+Â  Â  Â  Â  // â˜…ä¿®æ­£: BallControllerã®æ–°ã—ã„Launchãƒ¡ã‚½ãƒƒãƒ‰ã‚’å‘¼ã³å‡ºã™
+
+Â  Â  Â  Â  ballController.Launch(initialLaunchVelocity, fallTimeScale);
+
+
+
+        if (replaySystem != null) replaySystem.StartLogging();
+
+        if (uiManager != null) uiManager.UpdateStatusText($"Lifting: {liftCount}");
+
     }
 
-    // BallController‚ÌOnHitGroundƒCƒxƒ“ƒg‚É‚æ‚Á‚ÄŒÄ‚Ño‚³‚ê‚é
-    private void HandleGameOver()
+
+
+Â  Â  // â˜…å‰Šé™¤: LiftingKickSequenceã¯ä¸è¦ã«ãªã£ãŸãŸã‚ã€ã¾ã‚‹ã”ã¨å‰Šé™¤
+
+Â  Â  // private IEnumerator LiftingKickSequence() { ... }
+
+
+
+Â  Â  private void HandleGameOver()
+
     {
+
         if (CurrentState != GameState.Active && CurrentState != GameState.Countdown) return;
 
+        Time.timeScale = 1.0f;
+
+        Physics.gravity = initialGravity;
+
         CurrentState = GameState.GameOver;
-        replaySystem.StopLogging();
+
+        if (replaySystem != null) replaySystem.StopLogging();
+
         ballController.DeactivatePhysics();
 
-        uiManager.UpdateStatusText($"ƒQ[ƒ€ƒI[ƒo[\n‰ñ”: {liftCount}\nAƒ{ƒ^ƒ“‚ÅƒŠƒZƒbƒg");
-        uiManager.ShowReplayActivator(ballController.transform.position);
+        if (uiManager != null)
 
-        Debug.Log("ƒQ[ƒ€ƒI[ƒo[I");
+        {
+            uiManager.UpdateResultScore(liftCount);
+            uiManager.ShowGameOverPanel();
+
+        }
+
+        Debug.Log("ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ï¼");
+
     }
 
-    // ƒŠƒvƒŒƒCŠJn‚ÌƒgƒŠƒK[iReplayActivator‚ÌOnClickƒCƒxƒ“ƒg‚È‚Ç‚©‚çŒÄ‚Ôj
+
+
     public void StartReplay()
+
     {
-        if (CurrentState != GameState.GameOver) return;
+
+        if (CurrentState != GameState.GameOver || replaySystem == null) return;
+
         CurrentState = GameState.Replaying;
-        uiManager.UpdateStatusText("ƒŠƒvƒŒƒCÄ¶’†...");
-        StartCoroutine(PlayReplayCoroutine());
+
+        if (uiManager != null) uiManager.UpdateStatusText("ãƒªãƒ—ãƒ¬ã‚¤å†ç”Ÿä¸­...");
+
+        StartCoroutine(PlayReplayCoroutine(0.5f));
+
     }
 
-    private IEnumerator PlayReplayCoroutine()
+
+
+    private IEnumerator PlayReplayCoroutine(float speed)
+
     {
-        // ReplaySystem‚ÌÄ¶ƒRƒ‹[ƒ`ƒ“‚ğŠJn‚µA‚»‚ê‚ªI‚í‚é‚Ü‚Å‘Ò‹@‚·‚é
-        yield return StartCoroutine(replaySystem.Play());
 
-        // Ä¶‚ªI—¹‚µ‚½‚çƒQ[ƒ€ƒI[ƒo[ó‘Ô‚É–ß‚·
+        if (replaySystem != null) yield return StartCoroutine(replaySystem.Play(speed));
+
         CurrentState = GameState.GameOver;
-        uiManager.UpdateStatusText($"ƒQ[ƒ€ƒI[ƒo[\n‰ñ”: {liftCount}\nAƒ{ƒ^ƒ“‚ÅƒŠƒZƒbƒg");
+
+        if (uiManager != null)
+        {
+            uiManager.UpdateStatusText(""); // ãƒ†ã‚­ã‚¹ãƒˆã‚’ãƒªã‚»ãƒƒãƒˆ
+            uiManager.ShowGameOverPanel(); // â˜… è¿½åŠ : ãƒªãƒ—ãƒ¬ã‚¤çµ‚äº†å¾Œã€å†åº¦ãƒ‘ãƒãƒ«ã‚’è¡¨ç¤º
+        }
+
     }
+
+
 
     private void HandleGameClear()
+
     {
-        CurrentState = GameState.GameOver; // ƒQ[ƒ€ƒNƒŠƒAŒã‚àˆêí‚ÌI—¹ó‘Ô
-        replaySystem.StopLogging();
+
+        Time.timeScale = 1.0f;
+
+        CurrentState = GameState.GameOver;
+    
+        if (replaySystem != null) replaySystem.StopLogging();
+
         ballController.DeactivatePhysics();
-        uiManager.UpdateStatusText($"ƒNƒŠƒAI\n‡Œv {liftCount} ‰ñ");
-        Debug.Log("ƒQ[ƒ€ƒNƒŠƒAI");
+
+        if (uiManager != null)
+        {
+            uiManager.UpdateResultScore(liftCount);
+            uiManager.ShowGameClearPanel();
+
+            
+        }
+
     }
+    public void RetryGame()
+    {
+        ResetGame();
+        
+    }
+
+    /// <summary>
+    /// ãƒ›ãƒ¼ãƒ ã¸æˆ»ã‚‹ãƒœã‚¿ãƒ³ã‹ã‚‰å‘¼ã³å‡ºã•ã‚Œã‚‹ãƒ¡ã‚½ãƒƒãƒ‰
+    /// </summary>
+    public void GoToHomeScene()
+    {
+        Time.timeScale = 1.0f; // ã‚¿ã‚¤ãƒ ã‚¹ã‚±ãƒ¼ãƒ«ã‚’å¿…ãšå…ƒã«æˆ»ã™
+        SceneManager.LoadScene("Opening");
+    }
+
 }

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-6617071781939537906
+--- !u!114 &-8478981739398449851
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10,23 +10,50 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
-  m_Name: event:/FL1
+  m_Name: event:/FR
   m_EditorClassIdentifier: 
-  Path: event:/FL1
+  Path: event:/FR
   Guid:
-    Data1: -1207694813
-    Data2: 1333271388
-    Data3: 1756220094
-    Data4: 1253744858
+    Data1: -1514071678
+    Data2: 1266028238
+    Data3: 692092857
+    Data4: 1028859943
   Banks:
-  - {fileID: -3116254059118338985}
+  - {fileID: 2955360811594799308}
   IsStream: 0
   Is3D: 0
   IsOneShot: 1
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 627
+  Length: 444
+--- !u!114 &-6112759609647252186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/FL
+  m_EditorClassIdentifier: 
+  Path: event:/FL
+  Guid:
+    Data1: -2035144111
+    Data2: 1170576553
+    Data3: 1573764277
+    Data4: 1619580909
+  Banks:
+  - {fileID: 2955360811594799308}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 444
 --- !u!114 &-5605545397541709771
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,10 +96,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel8.bank
   Name: channel8
   StudioPath: bank:/channel8
-  lastModified: 638875938700000000
+  lastModified: 638915548526446400
   FileSizes:
   - Name: Desktop
-    Value: 5184
+    Value: 4864
   Exists: 1
 --- !u!114 &-4921188468465332663
 MonoBehaviour:
@@ -100,7 +127,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 627
+  Length: 444
 --- !u!114 &-4681031015009081327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -116,7 +143,7 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel4.bank
   Name: channel4
   StudioPath: bank:/channel4
-  lastModified: 638875938700000000
+  lastModified: 638915548525379917
   FileSizes:
   - Name: Desktop
     Value: 5216
@@ -147,7 +174,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 627
+  Length: 444
 --- !u!114 &-3116254059118338985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,10 +190,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel.bank
   Name: channel
   StudioPath: bank:/channel
-  lastModified: 638875938700000000
+  lastModified: 638915548522325669
   FileSizes:
   - Name: Desktop
-    Value: 4512
+    Value: 506
   Exists: 1
 --- !u!114 &-2912973111515861461
 MonoBehaviour:
@@ -183,7 +210,7 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 638875938700000000
+  lastModified: 638915548526744903
   FileSizes:
   - Name: Desktop
     Value: 15884
@@ -203,10 +230,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel7.bank
   Name: channel7
   StudioPath: bank:/channel7
-  lastModified: 638875938700000000
+  lastModified: 638915548526189977
   FileSizes:
   - Name: Desktop
-    Value: 4512
+    Value: 4864
   Exists: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -232,37 +259,37 @@ MonoBehaviour:
   - {fileID: 8518027471894194484}
   - {fileID: -2912973111515861461}
   EditorEvents:
-  - {fileID: -6617071781939537906}
   - {fileID: 757995406588412646}
   - {fileID: -5605545397541709771}
   - {fileID: -4494705496531370993}
   - {fileID: 8008376591804900762}
   - {fileID: -4921188468465332663}
   - {fileID: 7058088078650929537}
-  - {fileID: 3982198788175426809}
+  - {fileID: -6112759609647252186}
+  - {fileID: -8478981739398449851}
   EditorParameters: []
   MasterBanks:
   - {fileID: -2912973111515861461}
   StringsBanks:
   - {fileID: 8834992248007470128}
   cacheVersion: 131848
-  cacheTime: 638875938700000000
+  cacheTime: 638915548526774716
   SerializableEventsDict:
-  - key: event:/FL1
-    index: 0
   - key: event:/C1
-    index: 1
+    index: 0
   - key: event:/LEF!
-    index: 2
+    index: 1
   - key: event:/SL1
-    index: 3
+    index: 2
   - key: event:/SR1
-    index: 4
+    index: 3
   - key: event:/BL1
-    index: 5
+    index: 4
   - key: event:/BR1
+    index: 5
+  - key: event:/FL
     index: 6
-  - key: event:/FR1
+  - key: event:/FR
     index: 7
 --- !u!114 &757995406588412646
 MonoBehaviour:
@@ -290,7 +317,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 610
+  Length: 444
 --- !u!114 &1381045732660639099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -306,10 +333,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel3.bank
   Name: channel3
   StudioPath: bank:/channel3
-  lastModified: 638875938700000000
+  lastModified: 638915548524359375
   FileSizes:
   - Name: Desktop
-    Value: 5216
+    Value: 4864
   Exists: 1
 --- !u!114 &2955360811594799308
 MonoBehaviour:
@@ -326,38 +353,11 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel6.bank
   Name: channel6
   StudioPath: bank:/channel6
-  lastModified: 638875938700000000
+  lastModified: 638915548525918993
   FileSizes:
   - Name: Desktop
-    Value: 5184
+    Value: 7456
   Exists: 1
---- !u!114 &3982198788175426809
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
-  m_Name: event:/FR1
-  m_EditorClassIdentifier: 
-  Path: event:/FR1
-  Guid:
-    Data1: -1712589359
-    Data2: 1246678560
-    Data3: 1352879806
-    Data4: 2125010718
-  Banks:
-  - {fileID: 8518027471894194484}
-  IsStream: 0
-  Is3D: 0
-  IsOneShot: 1
-  Parameters: []
-  MinDistance: 1
-  MaxDistance: 20
-  Length: 604
 --- !u!114 &5324716002776133982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -373,10 +373,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channel5.bank
   Name: channel5
   StudioPath: bank:/channel5
-  lastModified: 638875938700000000
+  lastModified: 638915548525643663
   FileSizes:
   - Name: Desktop
-    Value: 4512
+    Value: 4864
   Exists: 1
 --- !u!114 &7058088078650929537
 MonoBehaviour:
@@ -404,7 +404,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 604
+  Length: 444
 --- !u!114 &8008376591804900762
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -431,7 +431,7 @@ MonoBehaviour:
   Parameters: []
   MinDistance: 1
   MaxDistance: 20
-  Length: 604
+  Length: 444
 --- !u!114 &8518027471894194484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -447,10 +447,10 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/channnel2.bank
   Name: channnel2
   StudioPath: bank:/channnel2
-  lastModified: 638875938700000000
+  lastModified: 638915548526542048
   FileSizes:
   - Name: Desktop
-    Value: 5184
+    Value: 506
   Exists: 1
 --- !u!114 &8834992248007470128
 MonoBehaviour:
@@ -467,8 +467,8 @@ MonoBehaviour:
   Path: ../test3/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 638875938700000000
+  lastModified: 638915548526774716
   FileSizes:
   - Name: Desktop
-    Value: 1644
+    Value: 1642
   Exists: 1

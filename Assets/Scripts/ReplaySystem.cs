@@ -32,7 +32,8 @@ public class ReplaySystem : MonoBehaviour
     private List<TransformData> ballLog = new List<TransformData>();
     private List<TransformData> shoeLog = new List<TransformData>();
     private bool isLogging = false;
-    private float gameSpeed = 1.0f;
+
+    // ★★★ 変更点: 記録時の速度(gameSpeed)は不要なため削除 ★★★
 
     void Awake()
     {
@@ -52,9 +53,9 @@ public class ReplaySystem : MonoBehaviour
         }
     }
 
-    public void StartLogging(float currentSpeed)
+    // ★★★ 変更点: 引数(currentSpeed)を削除 ★★★
+    public void StartLogging()
     {
-        gameSpeed = currentSpeed;
         ballLog.Clear();
         shoeLog.Clear();
         isLogging = true;
@@ -67,7 +68,8 @@ public class ReplaySystem : MonoBehaviour
         Debug.Log("リプレイロギング停止");
     }
 
-    public IEnumerator Play()
+    // ★★★ 変更点: 引数で再生速度(playbackSpeed)を受け取るように変更 ★★★
+    public IEnumerator Play(float playbackSpeed)
     {
         if (ballLog.Count == 0)
         {
@@ -75,21 +77,31 @@ public class ReplaySystem : MonoBehaviour
             yield break;
         }
 
-        Debug.Log("リプレイ再生開始");
+        // 0以下の速度が指定された場合は等速に戻す
+        if (playbackSpeed <= 0)
+        {
+            playbackSpeed = 1.0f;
+        }
+
+        Debug.Log($"リプレイ再生開始 (再生速度: {playbackSpeed})");
         SetReplayMode(true);
 
         yield return new WaitForSecondsRealtime(1.5f);
 
-        // --- 再生ロジック（元のコードからほぼ流用） ---
+        // --- 再生ロジックを刷新 ---
         float startTime = ballLog[0].timestamp;
         float replayDuration = ballLog.Last().timestamp - startTime;
-        float replayPlaybackDuration = replayDuration / gameSpeed;
+
+        // ★★★ 変更点: 記録時の速度ではなく、指定された再生速度で再生時間を計算 ★★★
+        float replayPlaybackDuration = replayDuration / playbackSpeed;
         float replayTimer = 0f;
 
         while (replayTimer <= replayPlaybackDuration + float.Epsilon)
         {
             replayTimer += Time.unscaledDeltaTime;
-            float tstamp = startTime + Mathf.Min(replayTimer * gameSpeed, replayDuration);
+
+            // ★★★ 変更点: 再生タイマーに再生速度を掛けて、記録データ上の正しい時刻を算出 ★★★
+            float tstamp = startTime + Mathf.Min(replayTimer * playbackSpeed, replayDuration);
 
             // 補間再生
             if (smoothReplay)
@@ -139,12 +151,12 @@ public class ReplaySystem : MonoBehaviour
         else
         {
             if (shoeController != null) shoeController.followController = true;
-            if (shoeRb != null) shoeRb.isKinematic = true; // 念のためKinematicに戻す
+            if (shoeRb != null) shoeRb.isKinematic = true;
             SetBallMaterialAlpha(1.0f);
         }
     }
 
-    // --- 以下、ヘルパーメソッド ---
+    // --- 以下、ヘルパーメソッド (変更なし) ---
     private void LogTransforms()
     {
         float currentTime = Time.time;
@@ -158,16 +170,12 @@ public class ReplaySystem : MonoBehaviour
     private void ApplyInterpolatedTransform(List<TransformData> log, Transform target, float timestamp)
     {
         if (log.Count <= 1) return;
-
         int i0 = GetIndexForTimestamp(log, timestamp);
         int i1 = (i0 < log.Count - 1) ? i0 + 1 : i0;
-
         var a = log[i0];
         var b = log[i1];
-
         float dt = b.timestamp - a.timestamp;
         float t = dt > Mathf.Epsilon ? (timestamp - a.timestamp) / dt : 0f;
-
         target.position = Vector3.Lerp(a.position, b.position, t);
         target.rotation = Quaternion.Slerp(a.rotation, b.rotation, t);
     }
@@ -199,31 +207,14 @@ public class ReplaySystem : MonoBehaviour
     {
         if (ballRenderer == null) return;
         var mat = ballRenderer.material;
-
         if (alpha < 1.0f)
         {
-            mat.SetFloat("_Mode", 2); // Fade
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            mat.SetInt("_ZWrite", 0);
-            mat.DisableKeyword("_ALPHATEST_ON");
-            mat.EnableKeyword("_ALPHABLEND_ON");
-            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            mat.renderQueue = 3000;
+            mat.SetFloat("_Mode", 2); mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha); mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha); mat.SetInt("_ZWrite", 0); mat.DisableKeyword("_ALPHATEST_ON"); mat.EnableKeyword("_ALPHABLEND_ON"); mat.DisableKeyword("_ALPHAPREMULTIPLY_ON"); mat.renderQueue = 3000;
         }
         else
         {
-            mat.SetFloat("_Mode", 0); // Opaque
-            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-            mat.SetInt("_ZWrite", 1);
-            mat.DisableKeyword("_ALPHATEST_ON");
-            mat.DisableKeyword("_ALPHABLEND_ON");
-            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            mat.renderQueue = -1;
+            mat.SetFloat("_Mode", 0); mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One); mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero); mat.SetInt("_ZWrite", 1); mat.DisableKeyword("_ALPHATEST_ON"); mat.DisableKeyword("_ALPHABLEND_ON"); mat.DisableKeyword("_ALPHAPREMULTIPLY_ON"); mat.renderQueue = -1;
         }
-        Color c = mat.color;
-        c.a = alpha;
-        mat.color = c;
+        Color c = mat.color; c.a = alpha; mat.color = c;
     }
 }
